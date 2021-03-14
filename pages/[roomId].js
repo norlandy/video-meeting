@@ -1,0 +1,400 @@
+import { useEffect, useRef, useReducer } from 'react';
+import Head from 'next/head';
+import { useRouter } from 'next/router';
+import { makeStyles } from '@material-ui/core/styles';
+import classNames from 'classnames';
+import socketIo from 'socket.io-client';
+import { v4 as uuidv4 } from 'uuid';
+import AppBar from '@material-ui/core/AppBar';
+import Toolbar from '@material-ui/core/Toolbar';
+import LinkIcon from '@material-ui/icons/Link';
+import IconButton from '@material-ui/core/IconButton';
+import ForumIcon from '@material-ui/icons/Forum';
+
+import Footer from '../components/room/layout/Footer';
+import Chat from '../components/room/layout/Chat';
+import Snackbar from '../components/Snackbar';
+import layout from '../components/room/layout/layout.json';
+import reducer, { initialState } from '../components/room/reducer';
+import * as types from '../components/room/reducer/types';
+
+const peers = {};
+const MY_ID = uuidv4();
+let socket;
+let localStream;
+
+const downloadFile = (blob, fileName = 'file') => {
+	const a = document.createElement('a');
+	const url = window.URL.createObjectURL(blob);
+	a.href = url;
+	a.download = fileName;
+	a.click();
+	window.URL.revokeObjectURL(url);
+	a.remove();
+};
+
+const useStyles = makeStyles(theme => ({
+	root: {
+		minHeight: '100vh',
+		display: 'flex',
+	},
+	appBar: {
+		boxShadow: 'none',
+		transition: theme.transitions.create(['margin', 'width'], {
+			easing: theme.transitions.easing.sharp,
+			duration: theme.transitions.duration.leavingScreen,
+		}),
+	},
+	appBarShift: {
+		width: `calc(100% - ${layout.CHAT_WIDTH}px)`,
+		transition: theme.transitions.create(['margin', 'width'], {
+			easing: theme.transitions.easing.easeOut,
+			duration: theme.transitions.duration.enteringScreen,
+		}),
+		marginRight: layout.CHAT_WIDTH,
+	},
+
+	title: {
+		flexGrow: 1,
+	},
+	hide: {
+		display: 'none',
+	},
+	mainBlock: {
+		flexGrow: 1,
+		position: 'relative',
+		display: 'flex',
+		justifyContent: 'center',
+		alignItems: 'center',
+		marginRight: -layout.CHAT_WIDTH,
+		transition: theme.transitions.create('margin', {
+			easing: theme.transitions.easing.sharp,
+			duration: theme.transitions.duration.leavingScreen,
+		}),
+	},
+	mainBlockShift: {
+		transition: theme.transitions.create('margin', {
+			easing: theme.transitions.easing.easeOut,
+			duration: theme.transitions.duration.enteringScreen,
+		}),
+		marginRight: 0,
+	},
+	videos: {
+		display: 'flex',
+		flexWrap: 'wrap',
+		justifyContent: 'center',
+		maxWidth: 1000,
+
+		'& video': {
+			width: 400,
+			height: 300,
+			objectFit: 'cover',
+		},
+	},
+}));
+
+const Room = () => {
+	const classes = useStyles();
+
+	const router = useRouter();
+	const { roomId } = router.query;
+
+	const [{ video, audio, linkSnackbar, chat, messages, scrollDown }, dispatch] = useReducer(
+		reducer,
+		initialState,
+	);
+
+	const videosRef = useRef(null);
+
+	const handleBeforeUnload = e => {
+		e.preventDefault();
+
+		socket.emit('user-disconnected', { clientId: MY_ID });
+
+		return undefined;
+	};
+
+	useEffect(() => {
+		window.addEventListener('beforeunload', handleBeforeUnload);
+
+		return () => {
+			window.removeEventListener('beforeunload', handleBeforeUnload);
+		};
+	}, []);
+
+	useEffect(() => {
+		if (roomId) {
+			socket = socketIo(process.env.NEXT_PUBLIC_SIGNALING_SERVER, {
+				query: `clientId=${MY_ID}&roomId=${roomId}`,
+			});
+
+			socket.on('can-join', start);
+			socket.on('cant-join', () => router.replace(`/${uuidv4()}`));
+			socket.on('user-connected', call);
+			socket.on('incoming-call', handleIcomingCall);
+			socket.on('answer', handleAnswer);
+			socket.on('new-ice-candidate', handleNewIceCandidate);
+			socket.on('user-disconnected', handleUserDisconnected);
+		}
+	}, [roomId]);
+
+	const addVideo = (stream, clientId = '') => {
+		const video = document.createElement('video');
+		video.setAttribute('autoplay', 'true');
+		video.srcObject = stream;
+		video.dataset.clientId = clientId;
+
+		videosRef.current.append(video);
+	};
+
+	const start = async () => {
+		try {
+			const stream = await navigator.mediaDevices.getUserMedia({
+				audio: false,
+				video: true,
+			});
+
+			addVideo(stream);
+
+			localStream = stream;
+
+			socket.emit('user-connected', { clientId: MY_ID });
+		} catch (e) {
+			alert(`getUserMedia() ${e.name}: ${e.message}`);
+		}
+	};
+	const getNewPeerConnection = clientId => {
+		const peer = new RTCPeerConnection({
+			iceServers: [
+				{
+					urls: 'stun:stun.l.google.com:19302',
+				},
+			],
+		});
+
+		peer.onicecandidate = e => {
+			if (e.candidate) {
+				socket.emit('new-ice-candidate', {
+					to: clientId,
+					from: MY_ID,
+					candidate: JSON.stringify(e.candidate),
+				});
+			}
+		};
+
+		peer.onaddstream = e => {
+			addVideo(e.stream, clientId);
+		};
+
+		peer.chat = peer.createDataChannel('chat');
+
+		peer.ondatachannel = e => {
+			const receiveChannel = e.channel;
+
+			if (receiveChannel.label === 'chat') {
+				receiveChannel.onmessage = e => {
+					dispatch({
+						type: types.NEW_MESSAGE,
+						payload: {
+							message: JSON.parse(e.data),
+						},
+					});
+				};
+			} else {
+				receiveChannel.binaryType = 'arraybuffer';
+
+				receiveChannel.onmessage = e => {
+					const blob = new Blob([e.data]);
+
+					downloadFile(blob, receiveChannel.label);
+
+					receiveChannel.close();
+				};
+			}
+		};
+
+		return peer;
+	};
+
+	const call = async clientId => {
+		const peer = getNewPeerConnection(clientId);
+
+		peers[clientId] = peer;
+
+		console.log(localStream);
+
+		localStream.getTracks().forEach(track => peer.addTrack(track, localStream));
+
+		const offer = await peer.createOffer();
+		await peer.setLocalDescription(offer);
+
+		socket.emit('call', { from: MY_ID, to: clientId, offer: JSON.stringify(offer) });
+	};
+	const handleIcomingCall = async call => {
+		if (call.to === MY_ID) {
+			console.log(`incoming-call: ${call.offer}`);
+
+			const peer = getNewPeerConnection(call.from);
+
+			peers[call.from] = peer;
+
+			localStream.getTracks().forEach(track => peer.addTrack(track, localStream));
+
+			await peer.setRemoteDescription(JSON.parse(call.offer));
+			const answer = await peer.createAnswer();
+			await peer.setLocalDescription(answer);
+
+			socket.emit('answer', {
+				from: MY_ID,
+				to: call.from,
+				answer: JSON.stringify(answer),
+			});
+		}
+	};
+	const handleAnswer = answer => {
+		if (answer.to === MY_ID) {
+			console.log(`answer: ${answer.answer}`);
+
+			peers[answer.from].setRemoteDescription(JSON.parse(answer.answer));
+		}
+	};
+	const handleNewIceCandidate = data => {
+		if (data.to === MY_ID) {
+			peers[data.from].addIceCandidate(new RTCIceCandidate(JSON.parse(data.candidate)));
+		}
+	};
+	const handleUserDisconnected = clientId => {
+		if (peers[clientId]) {
+			const video = document.querySelector(`[data-client-id='${clientId}']`);
+			video.remove();
+
+			peers[clientId].chat.close();
+			peers[clientId].close();
+			delete peers[clientId];
+		}
+	};
+
+	const toggleVideo = () => {
+		const enabled = localStream.getVideoTracks()[0].enabled;
+
+		if (enabled) {
+			localStream.getVideoTracks()[0].enabled = false;
+		} else {
+			localStream.getVideoTracks()[0].enabled = true;
+		}
+
+		dispatch({ type: types.TOGGLE_VIDEO });
+	};
+	const toggleAudio = () => {
+		const enabled = localStream.getAudioTracks()[0].enabled;
+
+		if (enabled) {
+			localStream.getAudioTracks()[0].enabled = false;
+		} else {
+			localStream.getAudioTracks()[0].enabled = true;
+		}
+
+		dispatch({ type: types.TOGGLE_AUDIO });
+	};
+
+	const handleAddMessage = text => {
+		const message = {
+			text,
+			type: 'text',
+			user: MY_ID,
+			date: Date.now(),
+		};
+
+		dispatch({
+			type: types.NEW_MESSAGE_FROM_ME,
+			payload: {
+				message,
+			},
+		});
+
+		for (const peer in peers) {
+			peers[peer].chat.send(JSON.stringify(message));
+		}
+	};
+	const handleAddFile = file => {
+		for (const peer in peers) {
+			const dataChannel = peers[peer].createDataChannel(file.name);
+			dataChannel.binaryType = 'arraybuffer';
+
+			dataChannel.onopen = async () => {
+				const arrayBuffer = await file.arrayBuffer();
+
+				dataChannel.send(arrayBuffer);
+			};
+		}
+	};
+	const handleCopyLink = async () => {
+		await navigator.clipboard.writeText(location.toString());
+
+		dispatch({ type: types.TOGGLE_LINK_SNACKBAR });
+	};
+
+	return (
+		<section
+			className={classes.root}
+			onDragOver={e => e.preventDefault()}
+			onDrop={e => e.preventDefault()}
+		>
+			<Head>
+				<title>{roomId}</title>
+			</Head>
+
+			<div
+				className={classNames(classes.mainBlock, {
+					[classes.mainBlockShift]: chat,
+				})}
+			>
+				<AppBar
+					position='fixed'
+					color='transparent'
+					className={classNames(classes.appBar, {
+						[classes.appBarShift]: chat,
+					})}
+				>
+					<Toolbar>
+						<div className={classes.title} />
+
+						<IconButton onClick={handleCopyLink} centerRipple={false}>
+							<LinkIcon />
+						</IconButton>
+
+						<IconButton
+							onClick={() => dispatch({ type: types.TOGGLE_CHAT })}
+							className={classNames(chat && classes.hide)}
+							centerRipple={false}
+						>
+							<ForumIcon />
+						</IconButton>
+					</Toolbar>
+				</AppBar>
+
+				<div className={classes.videos} ref={videosRef}></div>
+
+				<Footer video={video} audio={audio} toggleVideo={toggleVideo} toggleAudio={toggleAudio} />
+			</div>
+
+			<Chat
+				open={chat}
+				messages={messages}
+				scrollDown={scrollDown}
+				handleAddFile={handleAddFile}
+				handleAddMessage={handleAddMessage}
+				closeChat={() => dispatch({ type: types.TOGGLE_CHAT })}
+			/>
+
+			<Snackbar
+				open={linkSnackbar}
+				text='Link copied successfully!'
+				variant='success'
+				onClose={() => dispatch({ type: types.TOGGLE_LINK_SNACKBAR })}
+			/>
+		</section>
+	);
+};
+
+export default Room;
