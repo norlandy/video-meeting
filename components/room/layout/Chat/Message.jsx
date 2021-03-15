@@ -60,6 +60,16 @@ const useStyles = makeStyles({
 const Message = ({ message, info = true }) => {
 	const classes = useStyles();
 
+	const handleFileClick = () => {
+		const a = document.createElement('a');
+		a.href = message.file.url;
+		a.download = message.file.name;
+		a.click();
+
+		window.URL.revokeObjectURL(message.url);
+		a.remove();
+	};
+
 	return (
 		<div className={classes.root}>
 			{info && (
@@ -82,13 +92,14 @@ const Message = ({ message, info = true }) => {
 			)}
 
 			{message.type === 'file' && (
-				<ButtonBase className={classNames(classes.message, classes.file)}>
+				<ButtonBase className={classNames(classes.message, classes.file)} onClick={handleFileClick}>
 					<InsertDriveFileIcon fontSize='large' className={classes.fileIcon} color='action' />
 
 					<div className={classes.fileInfo}>
-						<Typography variant='body2'>{message.filename}</Typography>
+						<Typography variant='body2'>{message.file.name}</Typography>
 						<Typography variant='caption' color='textSecondary'>
-							22MB
+							{/* 22MB */}
+							{message.file.size}
 						</Typography>
 					</div>
 				</ButtonBase>

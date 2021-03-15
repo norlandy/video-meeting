@@ -20,6 +20,18 @@ import layout from '../components/room/layout/layout.json';
 import reducer, { initialState } from '../components/room/reducer';
 import * as types from '../components/room/reducer/types';
 
+function formatBytes(bytes, decimals = 2) {
+	if (bytes === 0) return '0 Bytes';
+
+	const k = 1024;
+	const dm = decimals < 0 ? 0 : decimals;
+	const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+
+	const i = Math.floor(Math.log(bytes) / Math.log(k));
+
+	return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+}
+
 const peers = {};
 const MY_ID = uuidv4();
 let socket;
@@ -31,15 +43,6 @@ const devices = {
 	done: false,
 };
 
-const downloadFile = (blob, fileName = 'file') => {
-	const a = document.createElement('a');
-	const url = window.URL.createObjectURL(blob);
-	a.href = url;
-	a.download = fileName;
-	a.click();
-	window.URL.revokeObjectURL(url);
-	a.remove();
-};
 const getConnectedDevices = async type => {
 	const devices = await navigator.mediaDevices.enumerateDevices();
 
@@ -259,9 +262,23 @@ const Room = () => {
 				receiveChannel.binaryType = 'arraybuffer';
 
 				receiveChannel.onmessage = e => {
-					const blob = new Blob([e.data]);
+					const messageData = JSON.parse(receiveChannel.label);
 
-					downloadFile(blob, receiveChannel.label);
+					const blob = new Blob([e.data]);
+					const url = window.URL.createObjectURL(blob);
+
+					dispatch({
+						type: types.NEW_MESSAGE,
+						payload: {
+							message: {
+								...messageData,
+								file: {
+									...messageData.file,
+									url,
+								},
+							},
+						},
+					});
 
 					receiveChannel.close();
 				};
@@ -373,14 +390,40 @@ const Room = () => {
 			peers[peer].chat.send(JSON.stringify(message));
 		}
 	};
-	const handleAddFile = file => {
+	const handleAddFile = async file => {
+		const messageData = {
+			type: 'file',
+			file: {
+				name: file.name,
+				size: formatBytes(file.size),
+			},
+			user: MY_ID,
+			date: Date.now(),
+		};
+
+		const arrayBuffer = await file.arrayBuffer();
+
+		const blob = new Blob([arrayBuffer]);
+		const url = window.URL.createObjectURL(blob);
+
+		dispatch({
+			type: types.NEW_MESSAGE_FROM_ME,
+			payload: {
+				message: {
+					...messageData,
+					file: {
+						url,
+						...messageData.file,
+					},
+				},
+			},
+		});
+
 		for (const peer in peers) {
-			const dataChannel = peers[peer].createDataChannel(file.name);
+			const dataChannel = peers[peer].createDataChannel(JSON.stringify(messageData));
 			dataChannel.binaryType = 'arraybuffer';
 
-			dataChannel.onopen = async () => {
-				const arrayBuffer = await file.arrayBuffer();
-
+			dataChannel.onopen = () => {
 				dataChannel.send(arrayBuffer);
 			};
 		}
