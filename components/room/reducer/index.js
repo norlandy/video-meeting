@@ -1,9 +1,10 @@
 import * as types from './types';
 
 export const initialState = {
-	video: true,
-	audio: false,
-	linkSnackbar: false,
+	videoDisabled: true,
+	audioDisabled: true,
+	videoInput: true,
+	audioInput: true,
 	chat: true,
 	messages: [],
 	scrollDown: false,
@@ -11,20 +12,25 @@ export const initialState = {
 
 const reducer = (state, action) => {
 	switch (action.type) {
-		case types.TOGGLE_VIDEO:
+		case types.ENABLE_VIDEO:
 			return {
 				...state,
-				video: !state.video,
+				videoDisabled: false,
 			};
-		case types.TOGGLE_AUDIO:
+		case types.ENABLE_AUDIO:
 			return {
 				...state,
-				audio: !state.audio,
+				audioDisabled: false,
 			};
-		case types.TOGGLE_LINK_SNACKBAR:
+		case types.TOGGLE_VIDEO_INPUT:
 			return {
 				...state,
-				linkSnackbar: !state.linkSnackbar,
+				videoInput: !state.videoInput,
+			};
+		case types.TOGGLE_AUDIO_INPUT:
+			return {
+				...state,
+				audioInput: !state.audioInput,
 			};
 		case types.TOGGLE_CHAT:
 			return {

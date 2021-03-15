@@ -6,7 +6,7 @@ const Alert = props => {
 	return <MuiAlert elevation={6} variant='filled' {...props} />;
 };
 
-const Snackbar = ({ open, text, onClose, variant = 'success' }) => {
+const Snackbar = ({ open, text, onClose, variant = 'success', autoHide = true }) => {
 	return (
 		<MuiSnackbar
 			anchorOrigin={{
@@ -14,8 +14,8 @@ const Snackbar = ({ open, text, onClose, variant = 'success' }) => {
 				horizontal: 'left',
 			}}
 			open={open}
-			autoHideDuration={6000}
-			onClose={onClose}
+			autoHideDuration={autoHide ? 6000 : null}
+			onClose={autoHide ? onClose : null}
 		>
 			<Alert onClose={onClose} severity={variant}>
 				{text}

@@ -30,16 +30,17 @@ const useStyles = makeStyles({
 	},
 });
 
-const Footer = ({ video, audio, toggleVideo, toggleAudio }) => {
+const Footer = ({ video, audio, videoDisabled, audioDisabled, toggleVideo, toggleAudio }) => {
 	const classes = useStyles();
 
 	return (
 		<div className={classes.footer}>
 			<IconButton
 				className={classes.button}
+				color={video ? 'default' : 'secondary'}
 				onClick={toggleVideo}
 				centerRipple={false}
-				color={video ? 'default' : 'secondary'}
+				disabled={videoDisabled}
 			>
 				{video ? (
 					<VideocamIcon fontSize='large' className={classes.icon} />
@@ -52,6 +53,7 @@ const Footer = ({ video, audio, toggleVideo, toggleAudio }) => {
 				color={audio ? 'default' : 'secondary'}
 				onClick={toggleAudio}
 				centerRipple={false}
+				disabled={audioDisabled}
 			>
 				{audio ? (
 					<MicIcon fontSize='large' className={classes.icon} />

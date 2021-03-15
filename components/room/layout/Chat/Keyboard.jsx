@@ -12,7 +12,7 @@ const useStyles = makeStyles({
 	input: {},
 });
 
-const Keyboard = ({ handleAddMessage }) => {
+const Keyboard = ({ disabled, handleAddMessage }) => {
 	const classes = useStyles();
 
 	const [text, setText] = useState('');
@@ -43,6 +43,7 @@ const Keyboard = ({ handleAddMessage }) => {
 					value={text}
 					onChange={handleTextChange}
 					onKeyDown={handleKeyDown}
+					disabled={disabled}
 					rowsMax={6}
 					autoFocus
 					fullWidth

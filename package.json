@@ -19,6 +19,5 @@
 		"sass": "^1.32.8",
 		"socket.io-client": "^4.0.0",
 		"uuid": "^8.3.2"
-	},
-	"devDependencies": {}
+	}
 }

@@ -56,7 +56,15 @@ const useStyles = makeStyles(theme => ({
 	},
 }));
 
-const Chat = ({ open, messages, scrollDown, handleAddMessage, handleAddFile, closeChat }) => {
+const Chat = ({
+	open,
+	messages,
+	scrollDown,
+	disabled,
+	handleAddMessage,
+	handleAddFile,
+	closeChat,
+}) => {
 	const classes = useStyles();
 
 	const [dndPlaceholder, setDndPlaceholder] = useState(false);
@@ -105,7 +113,7 @@ const Chat = ({ open, messages, scrollDown, handleAddMessage, handleAddFile, clo
 			{dndPlaceholder && <div className={classes.dndPlaceholder} onDragLeave={handleDragLeave} />}
 
 			<div>
-				<ButtonBase className={classes.drawerHeader} onClick={closeChat}>
+				<ButtonBase disabled={disabled} className={classes.drawerHeader} onClick={closeChat}>
 					<IconButton className={classes.closeButton} disabled component='span'>
 						<ChevronRightIcon color='action' />
 					</IconButton>
@@ -132,7 +140,7 @@ const Chat = ({ open, messages, scrollDown, handleAddMessage, handleAddFile, clo
 				})}
 			</div>
 
-			<Keyboard handleAddMessage={handleAddMessage} />
+			<Keyboard disabled={disabled} handleAddMessage={handleAddMessage} />
 		</Drawer>
 	);
 };
