@@ -78,11 +78,9 @@ const Chat = ({
 
 	const handleDragEnter = () => {
 		setDndPlaceholder(true);
-		console.log('enter');
 	};
 	const handleDragLeave = () => {
 		setDndPlaceholder(false);
-		console.log('leave');
 	};
 	const handleDragOver = e => {
 		e.preventDefault();

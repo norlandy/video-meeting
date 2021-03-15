@@ -136,25 +136,23 @@ const Room = () => {
 
 		return undefined;
 	};
+	const handleDeviceChange = async () => {
+		const { videoCameras, microphones } = await fetchDevices();
+
+		if (videoDisabled && audioDisabled && (videoCameras.length || microphones.length)) {
+			setDeviceAlert(true);
+		}
+	};
 
 	useEffect(() => {
 		window.addEventListener('beforeunload', handleBeforeUnload);
 
-		navigator.mediaDevices.addEventListener('devicechange', async e => {
-			const { videoCameras, microphones } = await fetchDevices();
-
-			if (isDev) {
-				console.log('Cameras:', videoCameras);
-				console.log('Micropho:', videoCameras);
-			}
-
-			if (videoDisabled && audioDisabled && (videoCameras.length || microphones.length)) {
-				setDeviceAlert(true);
-			}
-		});
+		navigator.mediaDevices.addEventListener('devicechange', handleDeviceChange);
 
 		return () => {
 			window.removeEventListener('beforeunload', handleBeforeUnload);
+
+			navigator.mediaDevices.removeEventListener('devicechange', handleDeviceChange);
 		};
 	}, []);
 
