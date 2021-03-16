@@ -15,22 +15,11 @@ import Alert from '@material-ui/lab/Alert';
 import Footer from '../components/room/layout/Footer';
 import Chat from '../components/room/layout/Chat';
 import ErrorModal from '../components/room/layout/ErrorModal';
+import { formatBytes } from '../utils/files';
 import Snackbar from '../components/Snackbar';
 import layout from '../components/room/layout/layout.json';
 import reducer, { initialState } from '../components/room/reducer';
 import * as types from '../components/room/reducer/types';
-
-function formatBytes(bytes, decimals = 2) {
-	if (bytes === 0) return '0 Bytes';
-
-	const k = 1024;
-	const dm = decimals < 0 ? 0 : decimals;
-	const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
-
-	const i = Math.floor(Math.log(bytes) / Math.log(k));
-
-	return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
-}
 
 const peers = {};
 const MY_ID = uuidv4();
@@ -180,6 +169,10 @@ const Room = () => {
 		video.setAttribute('autoplay', 'true');
 		video.srcObject = stream;
 		video.dataset.clientId = clientId;
+
+		if (!clientId) {
+			video.muted = true;
+		}
 
 		videosRef.current.append(video);
 	};
