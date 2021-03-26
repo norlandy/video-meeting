@@ -5,13 +5,9 @@ import { makeStyles } from '@material-ui/core/styles';
 import classNames from 'classnames';
 import socketIo from 'socket.io-client';
 import { v4 as uuidv4 } from 'uuid';
-import AppBar from '@material-ui/core/AppBar';
-import Toolbar from '@material-ui/core/Toolbar';
-import LinkIcon from '@material-ui/icons/Link';
-import IconButton from '@material-ui/core/IconButton';
-import ForumIcon from '@material-ui/icons/Forum';
 import Alert from '@material-ui/lab/Alert';
 
+import Header from '../components/room/layout/Header';
 import Footer from '../components/room/layout/Footer';
 import Chat from '../components/room/layout/Chat';
 import ErrorModal from '../components/room/layout/ErrorModal';
@@ -23,14 +19,13 @@ import * as types from '../components/room/reducer/types';
 
 const peers = {};
 const MY_ID = uuidv4();
-let socket;
-let localStream;
 const isDev = process.env.NODE_ENV !== 'production';
 const devices = {
 	video: true,
 	audio: true,
 	done: false,
 };
+let socket;
 
 const getConnectedDevices = async type => {
 	const devices = await navigator.mediaDevices.enumerateDevices();
@@ -48,27 +43,6 @@ const useStyles = makeStyles(theme => ({
 	root: {
 		minHeight: '100vh',
 		display: 'flex',
-	},
-	appBar: {
-		boxShadow: 'none',
-		transition: theme.transitions.create(['margin', 'width'], {
-			easing: theme.transitions.easing.sharp,
-			duration: theme.transitions.duration.leavingScreen,
-		}),
-	},
-	appBarShift: {
-		width: `calc(100% - ${layout.CHAT_WIDTH}px)`,
-		transition: theme.transitions.create(['margin', 'width'], {
-			easing: theme.transitions.easing.easeOut,
-			duration: theme.transitions.duration.enteringScreen,
-		}),
-		marginRight: layout.CHAT_WIDTH,
-	},
-	title: {
-		flexGrow: 1,
-	},
-	hide: {
-		display: 'none',
 	},
 	mainBlock: {
 		flexGrow: 1,
@@ -119,6 +93,7 @@ const Room = () => {
 	const [linkSnackbar, setLinkSnackbar] = useState(false);
 	const [deviceAlert, setDeviceAlert] = useState(false);
 
+	const localStreamRef = useRef(null);
 	const videosRef = useRef(null);
 
 	const handleBeforeUnload = e => {
@@ -145,6 +120,10 @@ const Room = () => {
 			window.removeEventListener('beforeunload', handleBeforeUnload);
 
 			navigator.mediaDevices.removeEventListener('devicechange', handleDeviceChange);
+
+			if (localStreamRef.current) {
+				localStreamRef.current.getTracks().forEach(track => track.stop());
+			}
 		};
 	}, []);
 
@@ -186,7 +165,7 @@ const Room = () => {
 
 			addVideo(stream);
 
-			localStream = stream;
+			localStreamRef.current = stream;
 
 			if (video) dispatch({ type: types.ENABLE_VIDEO });
 			if (audio) dispatch({ type: types.ENABLE_AUDIO });
@@ -286,7 +265,9 @@ const Room = () => {
 
 		peers[clientId] = peer;
 
-		localStream.getTracks().forEach(track => peer.addTrack(track, localStream));
+		localStreamRef.current
+			.getTracks()
+			.forEach(track => peer.addTrack(track, localStreamRef.current));
 
 		const offer = await peer.createOffer();
 		await peer.setLocalDescription(offer);
@@ -303,7 +284,9 @@ const Room = () => {
 
 			peers[call.from] = peer;
 
-			localStream.getTracks().forEach(track => peer.addTrack(track, localStream));
+			localStreamRef.current
+				.getTracks()
+				.forEach(track => peer.addTrack(track, localStreamRef.current));
 
 			await peer.setRemoteDescription(JSON.parse(call.offer));
 			const answer = await peer.createAnswer();
@@ -342,23 +325,23 @@ const Room = () => {
 	};
 
 	const toggleVideoInput = () => {
-		const enabled = localStream.getVideoTracks()[0].enabled;
+		const enabled = localStreamRef.current.getVideoTracks()[0].enabled;
 
 		if (enabled) {
-			localStream.getVideoTracks()[0].enabled = false;
+			localStreamRef.current.getVideoTracks()[0].enabled = false;
 		} else {
-			localStream.getVideoTracks()[0].enabled = true;
+			localStreamRef.current.getVideoTracks()[0].enabled = true;
 		}
 
 		dispatch({ type: types.TOGGLE_VIDEO_INPUT });
 	};
 	const toggleAudioInput = () => {
-		const enabled = localStream.getAudioTracks()[0].enabled;
+		const enabled = localStreamRef.current.getAudioTracks()[0].enabled;
 
 		if (enabled) {
-			localStream.getAudioTracks()[0].enabled = false;
+			localStreamRef.current.getAudioTracks()[0].enabled = false;
 		} else {
-			localStream.getAudioTracks()[0].enabled = true;
+			localStreamRef.current.getAudioTracks()[0].enabled = true;
 		}
 
 		dispatch({ type: types.TOGGLE_AUDIO_INPUT });
@@ -442,33 +425,13 @@ const Room = () => {
 					[classes.mainBlockShift]: chat,
 				})}
 			>
-				<AppBar
-					position='fixed'
-					color='transparent'
-					className={classNames(classes.appBar, {
-						[classes.appBarShift]: chat,
-					})}
-				>
-					<Toolbar>
-						<div className={classes.title} />
-
-						<IconButton
-							onClick={handleCopyLink}
-							centerRipple={false}
-							disabled={videoDisabled && audioDisabled}
-						>
-							<LinkIcon />
-						</IconButton>
-
-						<IconButton
-							onClick={() => dispatch({ type: types.TOGGLE_CHAT })}
-							className={classNames(chat && classes.hide)}
-							centerRipple={false}
-						>
-							<ForumIcon />
-						</IconButton>
-					</Toolbar>
-				</AppBar>
+				<Header
+					chat={chat}
+					videoDisabled={videoDisabled}
+					audioDisabled={audioDisabled}
+					handleCopyLink={handleCopyLink}
+					handleOpenChat={() => dispatch({ type: types.TOGGLE_CHAT })}
+				/>
 
 				{deviceAlert && (
 					<Alert severity='info' color='warning' variant='outlined'>

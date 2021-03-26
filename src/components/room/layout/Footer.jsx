@@ -43,9 +43,9 @@ const Footer = ({ video, audio, videoDisabled, audioDisabled, toggleVideo, toggl
 				disabled={videoDisabled}
 			>
 				{video ? (
-					<VideocamIcon fontSize='large' className={classes.icon} />
+					<VideocamIcon className={classes.icon} />
 				) : (
-					<VideocamOffIcon fontSize='large' className={classes.icon} />
+					<VideocamOffIcon className={classes.icon} />
 				)}
 			</IconButton>
 			<IconButton
@@ -55,11 +55,7 @@ const Footer = ({ video, audio, videoDisabled, audioDisabled, toggleVideo, toggl
 				centerRipple={false}
 				disabled={audioDisabled}
 			>
-				{audio ? (
-					<MicIcon fontSize='large' className={classes.icon} />
-				) : (
-					<MicOffIcon fontSize='large' className={classes.icon} />
-				)}
+				{audio ? <MicIcon className={classes.icon} /> : <MicOffIcon className={classes.icon} />}
 			</IconButton>
 		</div>
 	);
