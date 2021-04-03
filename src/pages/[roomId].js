@@ -7,15 +7,15 @@ import socketIo from 'socket.io-client';
 import { v4 as uuidv4 } from 'uuid';
 import Alert from '@material-ui/lab/Alert';
 
-import Header from '../components/room/layout/Header';
-import Footer from '../components/room/layout/Footer';
-import Chat from '../components/room/layout/Chat';
-import ErrorModal from '../components/room/layout/ErrorModal';
-import { formatBytes } from '../utils/files';
-import Snackbar from '../components/Snackbar';
-import layout from '../components/room/layout/layout.json';
-import reducer, { initialState } from '../components/room/reducer';
-import * as types from '../components/room/reducer/types';
+import Snackbar from '@/components/common/Snackbar';
+import { formatBytes } from '@/utils/files';
+import Header from '@/components/room/layout/Header';
+import Footer from '@/components/room/layout/Footer';
+import Chat from '@/components/room/layout/Chat';
+import ErrorModal from '@/components/room/layout/ErrorModal';
+import layout from '@/components/room/layout/layout.json';
+import reducer, { initialState } from '@/components/room/reducer';
+import * as types from '@/components/room/reducer/types';
 
 const peers = {};
 const MY_ID = uuidv4();
@@ -418,6 +418,9 @@ const Room = () => {
 		>
 			<Head>
 				<title>{roomId}</title>
+
+				<meta name='robots' content='noindex,follow' />
+				<meta name='googlebot' content='noindex,follow' />
 			</Head>
 
 			<div

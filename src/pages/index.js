@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
-import IconButton from '@material-ui/core/IconButton';
 import VideocamIcon from '@material-ui/icons/Videocam';
 import ControlPointIcon from '@material-ui/icons/ControlPoint';
 import { makeStyles } from '@material-ui/core/styles';
 import { v4 as uuidv4 } from 'uuid';
 
-import JoinModal from '../components/home/layout/JoinModal';
+import JoinModal from '@/components/home/layout/JoinModal';
+import IconButton from '@/components/common/IconButton';
 
 const useStyles = makeStyles({
 	root: {
@@ -68,15 +68,11 @@ const Home = () => {
 				<title>Video meeting</title>
 			</Head>
 
-			<IconButton className={classes.button} centerRipple={false} onClick={handleCreateMeeting}>
+			<IconButton className={classes.button} onClick={handleCreateMeeting}>
 				<VideocamIcon className={classes.icon} fontSize='large' />
 			</IconButton>
 
-			<IconButton
-				className={classes.button}
-				centerRipple={false}
-				onClick={() => setJoinModal(true)}
-			>
+			<IconButton className={classes.button} onClick={() => setJoinModal(true)}>
 				<ControlPointIcon className={classes.icon} fontSize='large' />
 			</IconButton>
 

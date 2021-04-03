@@ -3,8 +3,8 @@ import Head from 'next/head';
 import { ThemeProvider } from '@material-ui/core/styles';
 import CssBaseline from '@material-ui/core/CssBaseline';
 
-import '../styles/globals.scss';
-import { defaultTheme } from '../utils/theme';
+import '@/styles/globals.scss';
+import { defaultTheme } from '@/utils/theme';
 
 function MyApp({ Component, pageProps }) {
 	useEffect(() => {

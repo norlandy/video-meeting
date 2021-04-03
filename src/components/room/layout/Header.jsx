@@ -3,7 +3,6 @@ import { useRouter } from 'next/router';
 import AppBar from '@material-ui/core/AppBar';
 import Toolbar from '@material-ui/core/Toolbar';
 import LinkIcon from '@material-ui/icons/Link';
-import IconButton from '@material-ui/core/IconButton';
 import ForumIcon from '@material-ui/icons/Forum';
 import { makeStyles } from '@material-ui/core/styles';
 import ButtonBase from '@material-ui/core/ButtonBase';
@@ -11,6 +10,7 @@ import ArrowBackIcon from '@material-ui/icons/ArrowBack';
 import classNames from 'classnames';
 
 import layout from './layout.json';
+import IconButton from '@/components/common/IconButton';
 
 const useStyles = makeStyles(theme => ({
 	appBar: {
@@ -56,19 +56,11 @@ const Header = ({ chat, videoDisabled, audioDisabled, handleCopyLink, handleOpen
 
 				<div className={classes.spacer} />
 
-				<IconButton
-					onClick={handleCopyLink}
-					centerRipple={false}
-					disabled={videoDisabled && audioDisabled}
-				>
+				<IconButton onClick={handleCopyLink} disabled={videoDisabled && audioDisabled}>
 					<LinkIcon />
 				</IconButton>
 
-				<IconButton
-					onClick={handleOpenChat}
-					className={classNames(chat && classes.hide)}
-					centerRipple={false}
-				>
+				<IconButton onClick={handleOpenChat} className={classNames(chat && classes.hide)}>
 					<ForumIcon />
 				</IconButton>
 			</Toolbar>

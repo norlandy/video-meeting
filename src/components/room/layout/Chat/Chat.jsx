@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { makeStyles } from '@material-ui/core/styles';
 import Drawer from '@material-ui/core/Drawer';
 import Divider from '@material-ui/core/Divider';
-import IconButton from '@material-ui/core/IconButton';
 import ChevronRightIcon from '@material-ui/icons/ChevronRight';
 import Typography from '@material-ui/core/Typography';
 import ButtonBase from '@material-ui/core/ButtonBase';
@@ -10,6 +9,7 @@ import ButtonBase from '@material-ui/core/ButtonBase';
 import Keyboard from './Keyboard';
 import Message from './Message';
 import layout from '../layout.json';
+import IconButton from '@/components/common/IconButton';
 
 const useStyles = makeStyles(theme => ({
 	drawer: {

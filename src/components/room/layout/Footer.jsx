@@ -1,10 +1,11 @@
 import React from 'react';
 import { makeStyles } from '@material-ui/core/styles';
-import IconButton from '@material-ui/core/IconButton';
 import MicIcon from '@material-ui/icons/Mic';
 import MicOffIcon from '@material-ui/icons/MicOff';
 import VideocamIcon from '@material-ui/icons/Videocam';
 import VideocamOffIcon from '@material-ui/icons/VideocamOff';
+
+import IconButton from '@/components/common/IconButton';
 
 const useStyles = makeStyles({
 	footer: {
@@ -39,7 +40,6 @@ const Footer = ({ video, audio, videoDisabled, audioDisabled, toggleVideo, toggl
 				className={classes.button}
 				color={video ? 'default' : 'secondary'}
 				onClick={toggleVideo}
-				centerRipple={false}
 				disabled={videoDisabled}
 			>
 				{video ? (
@@ -52,7 +52,6 @@ const Footer = ({ video, audio, videoDisabled, audioDisabled, toggleVideo, toggl
 				className={classes.button}
 				color={audio ? 'default' : 'secondary'}
 				onClick={toggleAudio}
-				centerRipple={false}
 				disabled={audioDisabled}
 			>
 				{audio ? <MicIcon className={classes.icon} /> : <MicOffIcon className={classes.icon} />}
