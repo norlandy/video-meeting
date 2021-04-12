@@ -1,0 +1,1 @@
+import {createContext} from 'react';import {initialState} from './reducer';import {State} from './reducer/types';const Context = createContext<State>(initialState);Context.displayName = 'RoomContext';export default Context;

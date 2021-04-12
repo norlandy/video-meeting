@@ -1,19 +1,18 @@
-import { useEffect } from 'react';
+import {useEffect} from 'react';
+import {AppProps} from 'next/app';
 import Head from 'next/head';
-import { ThemeProvider } from '@material-ui/core/styles';
+import {ThemeProvider} from '@material-ui/core/styles';
 import CssBaseline from '@material-ui/core/CssBaseline';
+import 'webrtc-adapter';
 
-import '@/styles/globals.scss';
-import { defaultTheme } from '@/utils/theme';
+import {defaultTheme} from '@/utils/theme';
 
-function MyApp({ Component, pageProps }) {
+const MyApp: React.FC<AppProps> = ({Component, pageProps}) => {
 	useEffect(() => {
 		// Remove the server-side injected CSS.
 		const jssStyles = document.querySelector('#jss-server-side');
 
-		if (jssStyles) {
-			jssStyles.parentElement.removeChild(jssStyles);
-		}
+		jssStyles?.parentElement?.removeChild(jssStyles);
 	}, []);
 
 	return (
@@ -30,6 +29,6 @@ function MyApp({ Component, pageProps }) {
 			<Component {...pageProps} />
 		</ThemeProvider>
 	);
-}
+};
 
 export default MyApp;

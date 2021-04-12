@@ -1,17 +1,19 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { makeStyles } from '@material-ui/core/styles';
+import React, {useState, useEffect, useRef, useContext} from 'react';
+import {makeStyles, Theme} from '@material-ui/core/styles';
 import Drawer from '@material-ui/core/Drawer';
 import Divider from '@material-ui/core/Divider';
 import ChevronRightIcon from '@material-ui/icons/ChevronRight';
 import Typography from '@material-ui/core/Typography';
 import ButtonBase from '@material-ui/core/ButtonBase';
+import useMediaQuery from '@material-ui/core/useMediaQuery';
 
 import Keyboard from './Keyboard';
 import Message from './Message';
 import layout from '../layout.json';
 import IconButton from '@/components/common/IconButton';
+import Context from '@/components/room/context';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
 	drawer: {
 		width: layout.CHAT_WIDTH,
 		flexShrink: 0,
@@ -56,19 +58,20 @@ const useStyles = makeStyles(theme => ({
 	},
 }));
 
-const Chat = ({
-	open,
-	messages,
-	scrollDown,
-	disabled,
-	handleAddMessage,
-	handleAddFile,
-	closeChat,
-}) => {
+type Props = {
+	handleAddMessage: (text: string) => void;
+	handleAddFile: (file: File) => void;
+	closeChat: () => void;
+};
+
+const Chat: React.FC<Props> = ({handleAddMessage, handleAddFile, closeChat}) => {
 	const classes = useStyles();
+	const matches = useMediaQuery((theme: Theme) => theme.breakpoints.down('md'));
+
+	const {chat, messages, scrollDown, videoDisabled, audioDisabled} = useContext(Context);
 
 	const [dndPlaceholder, setDndPlaceholder] = useState(false);
-	const messagesRef = useRef(null);
+	const messagesRef = useRef<HTMLDivElement>(null!);
 
 	useEffect(() => {
 		if (scrollDown) {
@@ -82,10 +85,10 @@ const Chat = ({
 	const handleDragLeave = () => {
 		setDndPlaceholder(false);
 	};
-	const handleDragOver = e => {
+	const handleDragOver = (e: React.DragEvent) => {
 		e.preventDefault();
 	};
-	const handleDrop = e => {
+	const handleDrop = (e: React.DragEvent) => {
 		e.preventDefault();
 
 		setDndPlaceholder(false);
@@ -98,21 +101,26 @@ const Chat = ({
 	return (
 		<Drawer
 			className={classes.drawer}
-			variant='persistent'
+			variant={matches ? 'temporary' : 'persistent'}
 			anchor='right'
-			open={open}
+			open={chat}
 			classes={{
 				paper: classes.drawerPaper,
 			}}
 			onDragEnter={handleDragEnter}
 			onDragOver={handleDragOver}
 			onDrop={handleDrop}
+			onClose={closeChat}
 		>
 			{dndPlaceholder && <div className={classes.dndPlaceholder} onDragLeave={handleDragLeave} />}
 
 			<div>
-				<ButtonBase disabled={disabled} className={classes.drawerHeader} onClick={closeChat}>
-					<IconButton className={classes.closeButton} disabled component='span'>
+				<ButtonBase
+					disabled={videoDisabled && audioDisabled}
+					className={classes.drawerHeader}
+					onClick={closeChat}
+				>
+					<IconButton className={classes.closeButton} component='span' disabled>
 						<ChevronRightIcon color='action' />
 					</IconButton>
 
@@ -130,7 +138,7 @@ const Chat = ({
 
 					return (
 						<Message
-							key={Math.random(0, 1000)}
+							key={Math.random() * 1000}
 							message={message}
 							info={index === 0 || prevMessage.user !== message.user}
 						/>
@@ -138,7 +146,7 @@ const Chat = ({
 				})}
 			</div>
 
-			<Keyboard disabled={disabled} handleAddMessage={handleAddMessage} />
+			<Keyboard disabled={videoDisabled && audioDisabled} handleAddMessage={handleAddMessage} />
 		</Drawer>
 	);
 };

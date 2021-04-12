@@ -1,18 +1,18 @@
-import React from 'react';
-import { useRouter } from 'next/router';
+import React, {useContext} from 'react';
+import {useRouter} from 'next/router';
 import AppBar from '@material-ui/core/AppBar';
 import Toolbar from '@material-ui/core/Toolbar';
 import LinkIcon from '@material-ui/icons/Link';
 import ForumIcon from '@material-ui/icons/Forum';
-import { makeStyles } from '@material-ui/core/styles';
-import ButtonBase from '@material-ui/core/ButtonBase';
+import {makeStyles} from '@material-ui/core/styles';
 import ArrowBackIcon from '@material-ui/icons/ArrowBack';
 import classNames from 'classnames';
 
 import layout from './layout.json';
 import IconButton from '@/components/common/IconButton';
+import Context from '@/components/room/context';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
 	appBar: {
 		boxShadow: 'none',
 		transition: theme.transitions.create(['margin', 'width'], {
@@ -36,10 +36,17 @@ const useStyles = makeStyles(theme => ({
 	},
 }));
 
-const Header = ({ chat, videoDisabled, audioDisabled, handleCopyLink, handleOpenChat }) => {
+type Props = {
+	handleCopyLink: () => void;
+	handleOpenChat: () => void;
+};
+
+const Header: React.FC<Props> = ({handleCopyLink, handleOpenChat}) => {
 	const classes = useStyles();
 
 	const router = useRouter();
+
+	const {chat, videoDisabled, audioDisabled} = useContext(Context);
 
 	return (
 		<AppBar
@@ -60,7 +67,11 @@ const Header = ({ chat, videoDisabled, audioDisabled, handleCopyLink, handleOpen
 					<LinkIcon />
 				</IconButton>
 
-				<IconButton onClick={handleOpenChat} className={classNames(chat && classes.hide)}>
+				<IconButton
+					onClick={handleOpenChat}
+					className={classNames(chat && classes.hide)}
+					disabled={videoDisabled && audioDisabled}
+				>
 					<ForumIcon />
 				</IconButton>
 			</Toolbar>

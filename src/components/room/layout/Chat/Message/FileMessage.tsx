@@ -1,12 +1,13 @@
 import React from 'react';
-import { makeStyles } from '@material-ui/core/styles';
-import Card from '@material-ui/core/Card';
+import {makeStyles} from '@material-ui/core/styles';
 import Typography from '@material-ui/core/Typography';
 import blue from '@material-ui/core/colors/blue';
 import moment from 'moment';
 import ButtonBase from '@material-ui/core/ButtonBase';
 import InsertDriveFileIcon from '@material-ui/icons/InsertDriveFile';
 import classNames from 'classnames';
+
+import * as types from '@/components/room/types';
 
 const useStyles = makeStyles({
 	root: {
@@ -57,7 +58,12 @@ const useStyles = makeStyles({
 	},
 });
 
-const Message = ({ message, info = true }) => {
+type Props = {
+	message: types.FileMessage;
+	info?: boolean;
+};
+
+const FileMessage: React.FC<Props> = ({message, info = true}) => {
 	const classes = useStyles();
 
 	const handleFileClick = () => {
@@ -66,7 +72,7 @@ const Message = ({ message, info = true }) => {
 		a.download = message.file.name;
 		a.click();
 
-		window.URL.revokeObjectURL(message.url);
+		window.URL.revokeObjectURL(message.file.url);
 		a.remove();
 	};
 
@@ -85,27 +91,19 @@ const Message = ({ message, info = true }) => {
 				</div>
 			)}
 
-			{message.type === 'text' && (
-				<Card className={classes.message}>
-					<Typography variant='body2'>{message.text}</Typography>
-				</Card>
-			)}
+			<ButtonBase className={classNames(classes.message, classes.file)} onClick={handleFileClick}>
+				<InsertDriveFileIcon fontSize='large' className={classes.fileIcon} color='action' />
 
-			{message.type === 'file' && (
-				<ButtonBase className={classNames(classes.message, classes.file)} onClick={handleFileClick}>
-					<InsertDriveFileIcon fontSize='large' className={classes.fileIcon} color='action' />
-
-					<div className={classes.fileInfo}>
-						<Typography variant='body2'>{message.file.name}</Typography>
-						<Typography variant='caption' color='textSecondary'>
-							{/* 22MB */}
-							{message.file.size}
-						</Typography>
-					</div>
-				</ButtonBase>
-			)}
+				<div className={classes.fileInfo}>
+					<Typography variant='body2'>{message.file.name}</Typography>
+					<Typography variant='caption' color='textSecondary'>
+						{/* 22MB */}
+						{message.file.size}
+					</Typography>
+				</div>
+			</ButtonBase>
 		</div>
 	);
 };
 
-export default Message;
+export default FileMessage;

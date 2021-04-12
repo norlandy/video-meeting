@@ -1,64 +1,50 @@
-import { useState } from 'react';
+import {useState} from 'react';
 import Head from 'next/head';
-import { useRouter } from 'next/router';
+import {useRouter} from 'next/router';
 import VideocamIcon from '@material-ui/icons/Videocam';
 import ControlPointIcon from '@material-ui/icons/ControlPoint';
-import { makeStyles } from '@material-ui/core/styles';
-import { v4 as uuidv4 } from 'uuid';
+import {v4 as uuidv4} from 'uuid';
 
+import {useStyles} from '@/components/home/layout/styles';
 import JoinModal from '@/components/home/layout/JoinModal';
 import IconButton from '@/components/common/IconButton';
+import Snackbar from '@/components/common/Snackbar';
 
-const useStyles = makeStyles({
-	root: {
-		display: 'flex',
-		alignItems: 'center',
-		justifyContent: 'center',
-		minHeight: '100vh',
-	},
-	button: {
-		width: 150,
-		height: 150,
-
-		'&:first-child': {
-			marginRight: 60,
-		},
-	},
-	icon: {
-		fontSize: 100,
-	},
-});
-
-const Home = () => {
+const Home: React.FC = () => {
 	const classes = useStyles();
 
 	const router = useRouter();
 
 	const [joinModal, setJoinModal] = useState(false);
+	const [errorMessage, setErrorMessage] = useState({show: false, text: ''});
 
 	const handleCreateMeeting = () => {
 		router.push(`/${uuidv4()}`);
 	};
 
-	const handleJoin = link => {
+	const handleJoin = (link: string) => {
 		try {
+			// if link url - parse it and get meeting id
 			const url = new URL(link);
 
 			if (url.host !== window.location.host) {
-				return console.log('not valid meeting id');
+				return setErrorMessage({show: true, text: 'Not valid meeting id'});
 			}
 
-			const paths = new URL(link).pathname.split('/');
+			const paths = url.pathname.split('/');
 
-			if (paths > 2) {
-				return console.log('not valid meeting id');
+			if (paths.length > 2) {
+				return setErrorMessage({show: true, text: 'Not valid meeting id'});
 			}
 
 			const roomId = paths[1];
 
 			router.push(`/${roomId}`);
 		} catch (err) {
-			router.push(`/${link}`);
+			// if link not url - is meeting id
+			if (err.name === 'TypeError') {
+				router.push(`/${link}`);
+			}
 		}
 	};
 
@@ -76,7 +62,14 @@ const Home = () => {
 				<ControlPointIcon className={classes.icon} fontSize='large' />
 			</IconButton>
 
-			<JoinModal open={joinModal} closeModal={() => setJoinModal(false)} onSubmit={handleJoin} />
+			<JoinModal open={joinModal} onClose={() => setJoinModal(false)} onSubmit={handleJoin} />
+
+			<Snackbar
+				open={errorMessage.show}
+				text={errorMessage.text}
+				variant='error'
+				onClose={() => setErrorMessage((prev) => ({...prev, show: false}))}
+			/>
 		</section>
 	);
 };
